@@ -1,4 +1,4 @@
-local strands = {}
+local strands = { dsl = {} }
 
 -- ========================================================================== --
 -- Core API
@@ -95,6 +95,64 @@ end
 -- Start running the given strand with the given initial state.
 function strands.start(strand, state)
     return strand(state, done)
+end
+
+-- ========================================================================== --
+-- Content DSL
+-- ========================================================================== --
+
+function strands.dsl._resolve(value, state)
+    if type(value) == "function" then
+        return value(state)
+    end
+
+    return value
+end
+
+function strands.dsl._resolve_inlines(value, state)
+    value = strands.dsl._resolve(value, state)
+
+    if value == nil or value == false then
+        return {}
+    elseif type(value) == "string" then
+        return { { inline = "text", value = value } }
+    elseif type(value) == "table" and value.inline ~= nil then
+        local node = {}
+        for k, v in pairs(value) do
+            node[k] = v
+        end
+
+        local text = strands.dsl._resolve_inlines(value.text, state)
+        if text == nil then
+            return nil
+        end
+
+        node.text = text
+        return { node }
+    elseif type(value) == "table" then
+        local out = {}
+        for _, item in ipairs(value) do
+            local text = strands.dsl._resolve_inlines(item, state)
+            if text == nil then
+                return nil
+            end
+
+            for _, node in ipairs(text) do
+                out[#out + 1] = node
+            end
+        end
+        return out
+    end
+
+    return nil
+end
+
+function strands.dsl.em(...)
+    return { inline = "em", text = { ... } }
+end
+
+function strands.dsl.b(...)
+    return { inline = "b", text = { ... } }
 end
 
 return strands
