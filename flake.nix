@@ -19,6 +19,7 @@
       devShells = eachSystem (pkgs: {
         default = pkgs.mkShell {
           packages = with pkgs; [
+            lua5_1
           ];
         };
       });
