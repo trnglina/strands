@@ -1,0 +1,3 @@
+local strands = {}
+
+return strands
