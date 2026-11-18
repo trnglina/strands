@@ -1,3 +1,0 @@
-local ply = {}
-
-return ply
